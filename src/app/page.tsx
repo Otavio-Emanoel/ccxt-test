@@ -46,18 +46,25 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <h1 className="text-3xl font-bold mb-6">Arbitragem Monitor (BETA)</h1>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {data?.exchanges.map((ex: any) => (
           <div key={ex.name} className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg hover:border-blue-500 transition">
             <h2 className="text-xl font-semibold text-gray-400">{ex.name}</h2>
             <p className="text-sm text-gray-500 mb-4">{ex.pair}</p>
-            
+
             <div className="text-3xl font-bold text-green-400">
               {formatPrice(ex.price, ex.pair)}
             </div>
-            
-            <p className="mt-2 text-xs text-gray-500">Vol: {ex.vol?.toFixed(2)}</p>
+
+            <div className="mt-2 text-xs text-gray-300 space-y-1">
+              <div>Variação 24h: <span className={ex.changePercent > 0 ? 'text-green-400' : ex.changePercent < 0 ? 'text-red-400' : 'text-gray-400'}>{ex.changePercent?.toFixed(2)}%</span></div>
+              <div>Máx 24h: {formatPrice(ex.high, ex.pair)}</div>
+              <div>Mín 24h: {formatPrice(ex.low, ex.pair)}</div>
+              <div>Abertura 24h: {formatPrice(ex.open, ex.pair)}</div>
+              <div>Vol: {ex.vol?.toFixed(2)}</div>
+              <div>Vol USDT: {ex.quoteVolume ? ex.quoteVolume.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -66,7 +73,7 @@ export default function Dashboard() {
         <p className="text-sm text-gray-400">
           Última atualização: {new Date(data?.timestamp).toLocaleTimeString()}
         </p>
-        <button 
+        <button
           onClick={fetchPrices}
           className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium"
         >
