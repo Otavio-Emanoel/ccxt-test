@@ -15,14 +15,15 @@ export default function Dashboard() {
   const [loadingCandles, setLoadingCandles] = useState(false);
   // Estado arbitragem
   const [arb, setArb] = useState<any>(null);
-  const [arbLoading, setArbLoading] = useState(true);
+  const [arbLoading, setArbLoading] = useState(true); // somente para o primeiro carregamento
+  const [arbUpdating, setArbUpdating] = useState(false); // atualizações subsequentes sem apagar a tabela
   const [symbols, setSymbols] = useState<string>("BTC/USDT,ETH/USDT,SOL/USDT");
   const [exchanges, setExchanges] = useState<string>("binance,kucoin,bybit");
   const [minVol, setMinVol] = useState<number>(0);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<string>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [refreshMs, setRefreshMs] = useState<number>(20000);
+  const [refreshMs, setRefreshMs] = useState<number>(5000);
 
 
   // Função para formatar o preço sem quebrar
@@ -54,7 +55,9 @@ export default function Dashboard() {
 
   const fetchArbitrage = async () => {
     try {
-      setArbLoading(true);
+      const hasData = !!arb;
+      if (hasData) setArbUpdating(true);
+      else setArbLoading(true);
       const params = new URLSearchParams({
         symbols,
         exchanges,
@@ -68,7 +71,8 @@ export default function Dashboard() {
     } catch (err) {
       console.error(err);
     } finally {
-      setArbLoading(false);
+      if (arb) setArbUpdating(false);
+      else setArbLoading(false);
     }
   };
 
@@ -175,7 +179,7 @@ export default function Dashboard() {
           </div>
           <button onClick={fetchArbitrage} className="h-9 px-4 bg-blue-600 hover:bg-blue-700 rounded text-sm">Atualizar</button>
         </div>
-        <div className="mt-2 text-xs text-gray-400">{arbLoading ? 'Conectando...' : 'Conectado'} • {arb?.exchanges?.join(', ')} • Símbolos: {arb?.symbols?.join(', ')}</div>
+        <div className="mt-2 text-xs text-gray-400">{arbLoading ? 'Conectando...' : arbUpdating ? 'Atualizando…' : 'Conectado'} • {arb?.exchanges?.join(', ')} • Símbolos: {arb?.symbols?.join(', ')}</div>
       </div>
 
       {/* Tabela de Arbitragem */}
@@ -196,11 +200,11 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {arbLoading ? (
+              {!arb && arbLoading ? (
                 <tr><td className="px-3 py-4 text-gray-400" colSpan={9}>Carregando oportunidades...</td></tr>
               ) : filteredOpps.length ? (
-                filteredOpps.map((o: any, idx: number) => (
-                  <tr key={idx} className="border-t border-gray-800 hover:bg-gray-800/40">
+                filteredOpps.map((o: any) => (
+                  <tr key={`${o.symbol}-${o.buyExchange}-${o.sellExchange}`} className="border-t border-gray-800 hover:bg-gray-800/40">
                     <td className="px-3 py-2 font-medium text-gray-200">{o.symbol}</td>
                     <td className="px-3 py-2">{o.buyExchange.toUpperCase()}</td>
                     <td className="px-3 py-2 text-green-400">{o.buyPrice?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}</td>
