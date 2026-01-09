@@ -64,6 +64,7 @@ export default function Dashboard() {
         marketType: 'spot',
         limit: '100',
         minQuoteVol: String(minVol || 0),
+        minSpread: '-100',
       }).toString();
       const res = await fetch(`/api/arbitrage?${params}`);
       const json = await res.json();

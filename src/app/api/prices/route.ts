@@ -25,78 +25,94 @@ interface FormattedTicker {
     open: number;
     changePercent: number;
     quoteVolume: number;
+    lastUpdated?: number; // Opcional: para saber quão velho é o dado
 }
 
-// Cache simples em memória para evitar Rate Limit
-let cache = {
-    data: null as any,
-    lastUpdated: 0
-};
+// =================================================================
+// 2. CACHE INTELIGENTE (INCREMENTAL)
+// =================================================================
+// Usamos um Objeto/Mapa onde a chave é única (Ex: "Binance:BTC/USDT")
+// Isso garante que nunca teremos duplicatas e podemos atualizar individualmente.
+const tickerMap: Record<string, FormattedTicker> = {};
 
-const CACHE_DURATION = 2000; // 2 segundos de cache
+let lastFetchTime = 0;
+const CACHE_DURATION = 2000; // 2 segundos de proteção de Rate Limit
 
 export async function GET() {
     try {
         const now = Date.now();
 
-        // Se o cache for recente, retorna ele e nem bate nas exchanges
-        if (cache.data && (now - cache.lastUpdated < CACHE_DURATION)) {
-            return NextResponse.json(cache.data);
+        // Proteção de Rate Limit:
+        // Se faz menos de 2s que buscamos E já temos dados, retorna o que tem na memória.
+        // Isso evita ser banido pelas exchanges.
+        if (now - lastFetchTime < CACHE_DURATION && Object.keys(tickerMap).length > 0) {
+            return buildResponse();
         }
 
-        // 2. Busca tudo em paralelo, mas tratando erros individualmente
-        // Usamos fetchTickers (plural) para pegar tudo em 1 request por exchange
+        // 3. Atualiza o timestamp da tentativa
+        lastFetchTime = now;
+
+        // Busca em paralelo com allSettled
         const results = await Promise.allSettled([
             binance.fetchTickers(TARGET_SYMBOLS),
             kucoin.fetchTickers(TARGET_SYMBOLS)
         ]);
 
-        const exchangesData: FormattedTicker[] = [];
-
-        // Processa Binance
+        // Processa Binance (Se sucesso, ATUALIZA o mapa. Se falha, mantem o antigo)
         if (results[0].status === 'fulfilled') {
             const tickers = results[0].value;
-            // Transforma o objeto de tickers em array
             Object.values(tickers).forEach((ticker: any) => {
-                exchangesData.push(formatTicker(ticker, "Binance"));
+                updateCache(ticker, "Binance");
             });
         } else {
-            console.error("Erro Binance:", results[0].reason);
+            console.warn("Binance falhou, mantendo dados antigos:", results[0].reason);
         }
 
-        // Processa Kucoin
+        // Processa Kucoin (Se sucesso, ATUALIZA o mapa. Se falha, mantem o antigo)
         if (results[1].status === 'fulfilled') {
             const tickers = results[1].value;
             Object.values(tickers).forEach((ticker: any) => {
-                exchangesData.push(formatTicker(ticker, "KuCoin"));
+                updateCache(ticker, "KuCoin");
             });
         } else {
-            console.error("Erro Kucoin:", results[1].reason);
+            console.warn("KuCoin falhou, mantendo dados antigos:", results[1].reason);
         }
 
-        const responseData = {
-            timestamp: new Date().toISOString(),
-            exchanges: exchangesData
-        };
-
-        // Atualiza o cache
-        cache = {
-            data: responseData,
-            lastUpdated: now
-        };
-
-        return NextResponse.json(responseData);
+        return buildResponse();
 
     } catch (error) {
-        console.error("Erro geral na API:", error);
-        // Se der erro, tenta devolver o cache antigo se existir, para não quebrar a tela
-        if (cache.data) return NextResponse.json(cache.data);
-        
-        return NextResponse.json({ error: "Erro ao buscar cotações" }, { status: 500 });
-    }
+        console.error("Erro Crítico na API:", error);
+        // Mesmo no pior erro, tenta devolver o que tem na memória
+        if (Object.keys(tickerMap).length > 0) {
+            return buildResponse();
+        }
+        return NextResponse.json({ error: "Erro interno e sem cache" }, { status: 500 });
+     }
 }
 
-// Função auxiliar para padronizar o dado e evitar repetição de código
+// Helper para atualizar o mapa global
+function updateCache(ticker: any, exchangeName: string) {
+    const formatted = formatTicker(ticker, exchangeName);
+    
+    // CRIA UMA CHAVE ÚNICA: Ex: "Binance:BTC/USDT"
+    const uniqueKey = `${exchangeName}:${formatted.pair}`;
+    
+    // Salva/Sobrescreve no mapa global
+    tickerMap[uniqueKey] = formatted;
+}
+
+// Helper para montar a resposta final para o Front
+function buildResponse() {
+    // Converte o Mapa (Objeto) de volta para um Array
+    const allExchanges = Object.values(tickerMap);
+
+    return NextResponse.json({
+        timestamp: new Date().toISOString(),
+        exchanges: allExchanges
+    });
+}
+
+// Função de formatação (mantida igual, só adicionei tipagem)
 function formatTicker(ticker: any, exchangeName: string): FormattedTicker {
     const getChangePercent = (open: number, last: number) => {
         if (!open || !last) return 0;
@@ -113,5 +129,6 @@ function formatTicker(ticker: any, exchangeName: string): FormattedTicker {
         open: ticker.open,
         changePercent: ticker.percentage || getChangePercent(ticker.open, ticker.last), 
         quoteVolume: ticker.quoteVolume,
+        lastUpdated: Date.now()
     };
 }
