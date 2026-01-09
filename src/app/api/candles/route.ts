@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import ccxt from "ccxt";
+import * as ccxt from 'ccxt';
 
 // GET /api/candles?exchange=binance&pair=BTC/USDT&timeframe=1h&limit=100
 export async function GET(request: Request) {

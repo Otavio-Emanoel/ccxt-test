@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import ccxt from "ccxt";
+import * as ccxt from "ccxt";
 
 type MarketType = "spot" | "swap";
 
@@ -14,7 +14,7 @@ const DEFAULT_SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT"];
 const DEFAULT_EXCHANGES: ExchangeSlug[] = ["binance", "kucoin", "bybit"];
 
 function createExchange(slug: ExchangeSlug, marketType: MarketType): ccxt.Exchange {
-  // Para simplificar, usamos classes padrão e setamos options quando possível.
+  // para simplificar, usamos classes padrão e setamos options quando possível.
   // Foco em "spot" agora; mantemos o parâmetro marketType para futura expansão.
   switch (slug) {
     case "binance":
@@ -75,19 +75,33 @@ export async function GET(req: Request) {
         if (!supported.length) {
           return { slug, map: {} as Record<string, ccxt.Ticker> };
         }
-        try {
-          const tickers = await ex.fetchTickers(supported);
-          return { slug, map: tickers as Record<string, ccxt.Ticker> };
-        } catch (err) {
-          // fallback: tenta individual
-          const map: Record<string, ccxt.Ticker> = {};
-          for (const s of supported) {
-            try {
-              map[s] = await ex.fetchTicker(s);
-            } catch (_) {}
+        
+        // Adiciona retry logic
+        const maxRetries = 2;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const tickers = await ex.fetchTickers(supported);
+            return { slug, map: tickers as Record<string, ccxt.Ticker> };
+          } catch (err) {
+            console.warn(`Falha ao buscar tickers de ${slug} (tentativa ${attempt + 1}/${maxRetries + 1}):`, err);
+            if (attempt === maxRetries) {
+              // última tentativa: busca individual
+              const map: Record<string, ccxt.Ticker> = {};
+              for (const s of supported) {
+                try {
+                  map[s] = await ex.fetchTicker(s);
+                  await new Promise(resolve => setTimeout(resolve, 100)); // pequeno delay
+                } catch (tickerErr) {
+                  console.warn(`Erro ao buscar ${s} em ${slug}:`, tickerErr);
+                }
+              }
+              return { slug, map };
+            }
+            // aguarda antes de retentar
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
           }
-          return { slug, map };
         }
+        return { slug, map: {} as Record<string, ccxt.Ticker> };
       })
     );
 

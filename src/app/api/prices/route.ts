@@ -15,7 +15,7 @@ export async function GET() {
             kucoin.fetchTicker("BTC/USDT"),
         ]);
 
-        // Função para calcular variação percentual
+        // função para calcular variação percentual
         const getChangePercent = (open: number, last: number) => {
             if (!open || !last) return 0;
             return ((last - open) / open) * 100;
