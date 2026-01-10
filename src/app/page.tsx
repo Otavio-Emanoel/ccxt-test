@@ -269,21 +269,82 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* --- CONTROLES DE ORDENAÇÃO --- */}
+      <div className="mt-6 flex gap-2 flex-wrap items-center">
+        <span className="text-sm font-semibold text-gray-400">Ordenar por:</span>
+        <div className="flex gap-2 flex-wrap">
+          <button 
+            onClick={()=>toggleSort('spreadPct')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              sortKey === 'spreadPct' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' 
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            Spread % {sortKey === 'spreadPct' && (sortDir === 'asc' ? '↑' : '↓')}
+          </button>
+          
+          <button 
+            onClick={()=>toggleSort('symbol')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              sortKey === 'symbol' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' 
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            Nome {sortKey === 'symbol' && (sortDir === 'asc' ? 'A→Z' : 'Z→A')}
+          </button>
+
+          <button 
+            onClick={()=>toggleSort('score')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              sortKey === 'score' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' 
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            Score {sortKey === 'score' && (sortDir === 'asc' ? '↑' : '↓')}
+          </button>
+
+          <button 
+            onClick={()=>toggleSort('buyExchange')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              sortKey === 'buyExchange' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' 
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            Compra {sortKey === 'buyExchange' && (sortDir === 'asc' ? 'A→Z' : 'Z→A')}
+          </button>
+
+          <button 
+            onClick={()=>toggleSort('sellExchange')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              sortKey === 'sellExchange' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' 
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            Venda {sortKey === 'sellExchange' && (sortDir === 'asc' ? 'A→Z' : 'Z→A')}
+          </button>
+        </div>
+      </div>
+
       {/* --- TABELA DE ARBITRAGEM --- */}
-      <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-xl mb-10 ring-1 ring-white/5">
+      <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-xl mb-10 ring-1 ring-white/5 mt-4">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-800 text-gray-400 uppercase text-xs font-semibold tracking-wider">
               <tr>
-                <th className="px-4 py-3 text-left cursor-pointer hover:text-white transition" onClick={()=>toggleSort('symbol')}>Par {sortKey==='symbol' && (sortDir==='asc'?'↑':'↓')}</th>
-                <th className="px-4 py-3 text-left cursor-pointer hover:text-white transition" onClick={()=>toggleSort('buyExchange')}>Compra {sortKey==='buyExchange' && (sortDir==='asc'?'↑':'↓')}</th>
+                <th className="px-4 py-3 text-left">Par</th>
+                <th className="px-4 py-3 text-left">Compra</th>
                 <th className="px-4 py-3 text-right">Preço</th>
-                <th className="px-4 py-3 text-left cursor-pointer hover:text-white transition pl-6" onClick={()=>toggleSort('sellExchange')}>Venda {sortKey==='sellExchange' && (sortDir==='asc'?'↑':'↓')}</th>
+                <th className="px-4 py-3 text-left pl-6">Venda</th>
                 <th className="px-4 py-3 text-right">Preço</th>
-                <th className="px-4 py-3 text-right cursor-pointer hover:text-white transition" onClick={()=>toggleSort('spreadPct')}>Spread % {sortKey==='spreadPct' && (sortDir==='asc'?'↑':'↓')}</th>
+                <th className="px-4 py-3 text-right">Spread %</th>
                 <th className="px-4 py-3 text-right">Spread $</th>
                 <th className="px-4 py-3 text-right text-gray-500">Vol 24h (USDT)</th>
-                <th className="px-4 py-3 text-right cursor-pointer hover:text-white transition" onClick={()=>toggleSort('score')}>Score</th>
+                <th className="px-4 py-3 text-right">Score</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
