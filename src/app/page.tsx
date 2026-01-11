@@ -41,6 +41,9 @@ export default function Dashboard() {
   // --- Ordenação (Padrão: Maior Spread) ---
   const [sortKey, setSortKey] = useState<string>("spreadPct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  
+  // --- Visualização Mobile ---
+  const [viewMode, setViewMode] = useState<"cards" | "list">("cards");
 
   // Formata preços de forma inteligente (Fiat vs Cripto)
   const formatPrice = (price: number, pair: string) => {
@@ -270,8 +273,42 @@ export default function Dashboard() {
       </div>
 
       {/* --- CONTROLES DE ORDENAÇÃO --- */}
-      <div className="mt-6 flex gap-2 flex-wrap items-center">
-        <span className="text-sm font-semibold text-gray-400">Ordenar por:</span>
+      <div className="mt-6 flex gap-3 flex-wrap items-center justify-between">
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-sm font-semibold text-gray-400">Ordenar por:</span>
+        </div>
+        
+        {/* Toggle de Visualização Mobile */}
+        <div className="lg:hidden flex gap-1 bg-gray-800 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('cards')}
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
+              viewMode === 'cards'
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
+              viewMode === 'list'
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <div className="mt-3 flex gap-2 flex-wrap items-center">
+        <span className="text-sm font-semibold text-gray-400 lg:hidden">Filtros:</span>
         <div className="flex gap-2 flex-wrap">
           <button 
             onClick={()=>toggleSort('spreadPct')}
@@ -412,8 +449,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- CARDS DE ARBITRAGEM (Mobile) --- */}
-      <div className="lg:hidden space-y-3 mt-4 mb-10">
+      {/* --- CARDS DE ARBITRAGEM (Mobile - Cards) --- */}
+      {viewMode === 'cards' && (
+        <div className="lg:hidden space-y-3 mt-4 mb-10">
         {!arb && arbLoading ? (
           <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 text-center text-gray-500">
             Carregando oportunidades de arbitragem...
@@ -489,6 +527,73 @@ export default function Dashboard() {
           Exibindo {filteredOpps.length} de {arb?.count || 0} pares analisados
         </div>
       </div>
+      )}
+
+      {/* --- LISTA COMPACTA DE ARBITRAGEM (Mobile - Lista) --- */}
+      {viewMode === 'list' && (
+        <div className="lg:hidden mt-4 mb-10">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-xl ring-1 ring-white/5">
+            {!arb && arbLoading ? (
+              <div className="p-8 text-center text-gray-500">
+                Carregando oportunidades de arbitragem...
+              </div>
+            ) : filteredOpps.length > 0 ? (
+              <div className="divide-y divide-gray-800">
+                {filteredOpps.map((o: any) => (
+                  <div key={`${o.symbol}-${o.buyExchange}-${o.sellExchange}`} className="p-3 hover:bg-gray-800/40 transition-colors">
+                    {/* Linha 1: Par e Spread */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-bold text-sm text-gray-200">{o.symbol}</div>
+                      <div className={`text-sm font-bold ${
+                        o.spreadPct > 0 ? 'text-green-400' : 'text-gray-500'
+                      }`}>
+                        {o.spreadPct > 0 ? '+' : ''}{o.spreadPct.toFixed(2)}%
+                      </div>
+                    </div>
+                    
+                    {/* Linha 2: Compra e Venda */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-900/30 text-green-400 border border-green-900/50">
+                          {o.buyExchange.toUpperCase()}
+                        </span>
+                        <span className="font-mono text-gray-300 text-[11px]">
+                          ${o.buyPrice?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-900/30 text-red-400 border border-red-900/50">
+                          {o.sellExchange.toUpperCase()}
+                        </span>
+                        <span className="font-mono text-gray-300 text-[11px]">
+                          ${o.sellPrice?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Linha 3: Detalhes */}
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-500">
+                      <span>Vol: {Number(o.buyQuoteVol).toLocaleString('en-US', { notation: 'compact' })} / {Number(o.sellQuoteVol).toLocaleString('en-US', { notation: 'compact' })}</span>
+                      <span>Score: {o.score.toFixed(1)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <svg className="w-10 h-10 mb-3 text-gray-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-gray-500 text-sm">Nenhuma oportunidade encontrada.</p>
+                <p className="text-xs mt-1 text-gray-600">Tente reduzir o filtro de "Min Spread".</p>
+              </div>
+            )}
+            <div className="px-4 py-2 bg-gray-800/30 border-t border-gray-800 text-xs text-center text-gray-500">
+              Exibindo {filteredOpps.length} de {arb?.count || 0} pares analisados
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- CARDS DE PREÇO (INDIVIDUAIS) --- */}
       <h2 className="text-xl font-bold mb-4 text-gray-300 flex items-center gap-2">
