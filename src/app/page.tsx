@@ -330,8 +330,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- TABELA DE ARBITRAGEM --- */}
-      <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-xl mb-10 ring-1 ring-white/5 mt-4">
+      {/* --- TABELA DE ARBITRAGEM (Desktop) --- */}
+      <div className="hidden lg:block bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-xl mb-10 ring-1 ring-white/5 mt-4">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-800 text-gray-400 uppercase text-xs font-semibold tracking-wider">
@@ -409,6 +409,84 @@ export default function Dashboard() {
         </div>
         <div className="px-4 py-2 bg-gray-800/30 border-t border-gray-800 text-xs text-right text-gray-500">
            Exibindo {filteredOpps.length} de {arb?.count || 0} pares analisados
+        </div>
+      </div>
+
+      {/* --- CARDS DE ARBITRAGEM (Mobile) --- */}
+      <div className="lg:hidden space-y-3 mt-4 mb-10">
+        {!arb && arbLoading ? (
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 text-center text-gray-500">
+            Carregando oportunidades de arbitragem...
+          </div>
+        ) : filteredOpps.length > 0 ? (
+          filteredOpps.map((o: any) => (
+            <div key={`${o.symbol}-${o.buyExchange}-${o.sellExchange}`} className="bg-gray-900 border border-gray-700 rounded-xl p-4 shadow-lg ring-1 ring-white/5">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-800">
+                <h3 className="text-lg font-bold text-gray-200">{o.symbol}</h3>
+                <div className="text-right">
+                  <div className={`text-lg font-bold ${o.spreadPct > 0 ? 'text-green-400' : 'text-gray-500'}`}>
+                    {o.spreadPct > 0 ? '+' : ''}{o.spreadPct.toFixed(2)}%
+                  </div>
+                  <div className="text-xs text-gray-500">Spread</div>
+                </div>
+              </div>
+
+              {/* Compra e Venda */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1 uppercase font-semibold">Comprar em</div>
+                  <div className="mb-2">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900/30 text-green-400 border border-green-900/50">
+                      {o.buyExchange.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="font-mono text-sm text-gray-300">
+                    ${o.buyPrice?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Vol: {Number(o.buyQuoteVol).toLocaleString('en-US', { notation: 'compact' })}
+                  </div>
+                </div>
+
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1 uppercase font-semibold">Vender em</div>
+                  <div className="mb-2">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-900/30 text-red-400 border border-red-900/50">
+                      {o.sellExchange.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="font-mono text-sm text-gray-300">
+                    ${o.sellPrice?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Vol: {Number(o.sellQuoteVol).toLocaleString('en-US', { notation: 'compact' })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Detalhes */}
+              <div className="flex justify-between items-center text-xs text-gray-500 pt-2 border-t border-gray-800">
+                <div>
+                  <span className="text-gray-400">Spread $:</span> ${o.spreadAbs?.toFixed(4)}
+                </div>
+                <div>
+                  <span className="text-gray-400">Score:</span> {o.score.toFixed(1)}
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 text-center">
+            <svg className="w-10 h-10 mb-3 text-gray-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-gray-500">Nenhuma oportunidade encontrada.</p>
+            <p className="text-xs mt-1 text-gray-600">Tente reduzir o filtro de "Min Spread" ou adicionar mais exchanges.</p>
+          </div>
+        )}
+        <div className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-xs text-center text-gray-500">
+          Exibindo {filteredOpps.length} de {arb?.count || 0} pares analisados
         </div>
       </div>
 
